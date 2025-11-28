@@ -2,12 +2,12 @@
 import rsa, uuid, json, copy, requests, re, hashlib
 from functools import reduce
 
-# 初始设置
+# Initial settings
 DIFFICULTY = int('00000' + 'f' * 59, 16)
 EMPTY_HASH = '0' * 64
-path = 'comp5567/project/screen_snap/'
+path = './screen_snap/'
 
-'''hash函数'''
+'''Hash functions'''
 def hash(x):
     if isinstance(x, str):
         x = x.encode('utf-8')
@@ -68,7 +68,7 @@ def extract_blockchain_info(html_content):
     genesis_match = re.search(r'hash of genesis block: ([a-f0-9]+)', html_content)
     if genesis_match:
         info['genesis_hash'] = genesis_match.group(1)
-        print(f"创世区块: {info['genesis_hash']}")
+        print(f"Genesis Block: {info['genesis_hash']}")
     
     bank_match = re.search(r"the bank's addr: ([a-f0-9]+)", html_content)
     hacker_match = re.search(r"the hacker's addr: ([a-f0-9]+)", html_content)  
@@ -76,11 +76,11 @@ def extract_blockchain_info(html_content):
     
     if bank_match and hacker_match and shop_match:
         info['bank_addr'] = bank_match.group(1)
-        print(f"银行地址: {info['bank_addr']}")
+        print(f"Bank Address: {info['bank_addr']}")
         info['hacker_addr'] = hacker_match.group(1)
-        print(f"黑客地址: {info['hacker_addr']}")
+        print(f"Hacker Address: {info['hacker_addr']}")
         info['shop_addr'] = shop_match.group(1)
-        print(f"商店地址: {info['shop_addr']}")
+        print(f"Shop Address: {info['shop_addr']}")
     
     blocks_match = re.search(r"Blockchain Explorer: ({.*})", html_content)
     if blocks_match:
@@ -94,8 +94,8 @@ def extract_blockchain_info(html_content):
                         info['input_utxo'] = tx['input'][0]
                         if tx.get('signature') and len(tx['signature']) > 0:
                             info['signature'] = tx['signature'][0]
-                        print(f"输入UTXO: {info['input_utxo']}")
-                        print(f"签名: {info['signature'][:20]}...")
+                        print(f"Input UTXO: {info['input_utxo']}")
+                        print(f"Signature: {info['signature'][:20]}...")
                         break
                 break
     
@@ -115,7 +115,7 @@ def pow(b, difficulty, msg=""):
             return b
         
         if nonce % 100000 == 0 and nonce > 0:
-            print(f"已尝试 {nonce} 次...")
+            print(f"Tried {nonce} times...")
         
         nonce += 1
 
@@ -163,22 +163,22 @@ def final_check(session):
 
 '''
 def debug_submission(block, session, description):
-    print(f"提交区块: {description}")
-    print(f"区块哈希: {block.get('hash', '')[:16]}...")
-    print(f"前驱区块: {block.get('prev', '')[:16]}...")
-    print(f"交易数: {len(block.get('transactions', []))}")
+    print(f"Submitting block: {description}")
+    print(f"Block hash: {block.get('hash', '')[:16]}...")
+    print(f"Previous block: {block.get('prev', '')[:16]}...")
+    print(f"Number of transactions: {len(block.get('transactions', []))}")
     
     url_begin = "http://127.0.0.1:5000/b9af31f66147e/create_transaction"
     result = requests.post(url_begin, data=json.dumps(block), headers=header_change(session))
     
-    print(f"响应状态: {result.status_code}")
-    print(f"响应内容: {result.text}")
+    print(f"Response status: {result.status_code}")
+    print(f"Response content: {result.text}")
     
-    # 检查session更新
+    # Check session update
     new_session = session
     new_session = result.headers['Set-Cookie'].split(";")[0][8:]
     if new_session != session:
-        print(f"   🔄 Session已更新")
+        print(f"   🔄 Session updated")
     
     return result.text, new_session
 '''
@@ -188,18 +188,23 @@ def check_height(session):
     response = requests.get(url, headers=header_change(session))
 
     info = extract_blockchain_info(response.text)
-    print(f"区块链高度: {len(info.get('blocks', {}))} 区块")
+    print(f"Blockchain height: {len(info.get('blocks', {}))} blocks")
     
     return response.text
 '''
 
 def save_html(session, filename):
-
+    import os
+    
     url = "http://127.0.0.1:5000/b9af31f66147e/"
     
     response = requests.get(url, headers=header_change(session))
     html_content = response.text
-    filename = path+ filename    
+    filename = path + filename    
+    
+    # Ensure directory exists
+    os.makedirs(os.path.dirname(os.path.abspath(filename)), exist_ok=True)
+    
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(html_content)
         
